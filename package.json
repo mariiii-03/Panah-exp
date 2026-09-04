@@ -1,0 +1,18 @@
+{
+  "name": "panah-exp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Panah (پناگاہ) — Humanitarian Shelter Assessment & Parametric Design Platform",
+  "scripts": {
+    "dev:backend": "cd Backend && .venv/bin/python run.py --port 8000 --host 127.0.0.1",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:frontend",
+    "test:backend": "cd Backend && PYTHONPATH=. .venv/bin/python -m pytest tests/ -q",
+    "seed": "cd Backend && .venv/bin/python seed_data.py"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

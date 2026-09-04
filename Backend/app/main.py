@@ -127,6 +127,14 @@ app = FastAPI(
     ),
     docs_url="/docs",
     redoc_url="/redoc",
+    swagger_ui_parameters={
+        "syntaxHighlight.theme": "monokai",
+        "defaultModelsExpandDepth": -1,
+        "docExpansion": "none",
+        "filter": True,
+        "persistAuthorization": True,
+        "displayRequestDuration": True,
+    },
     openapi_tags=[
         {"name": "Authentication", "description": "JWT login, register, token management"},
         {"name": "Projects", "description": "Project CRUD and statistics"},
