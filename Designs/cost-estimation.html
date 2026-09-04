@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PANAH — Cost Estimation Module</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .total-box{position:absolute; top:36px; right:32px; background:var(--cream); border-radius:4px; padding:14px 20px; text-align:right;}
+  .total-box .lbl{font-family:var(--font-mono); font-size:.65rem; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.06em;}
+  .total-box .val{font-family:var(--font-display); font-size:1.5rem; font-weight:700; color:var(--green-ok);}
+  .total-box .val span{font-size:.9rem; font-weight:500; color:var(--ink-soft);}
+
+  .three-col{display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; padding:0 32px 40px; align-items:start;}
+
+  .matrix-row{display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--line);}
+  .matrix-row:last-of-type{border-bottom:none;}
+  .matrix-row .name{font-family:var(--font-display); font-weight:600; color:var(--navy); font-size:.92rem; margin-bottom:6px;}
+  .matrix-row .qty{display:inline-block; background:#eceae0; font-family:var(--font-mono); font-size:.7rem; padding:3px 8px; border-radius:2px; color:var(--ink-soft);}
+  .matrix-row .price{font-family:var(--font-mono); font-weight:600; color:var(--navy); text-align:right; margin-bottom:6px;}
+  .matrix-row .src{font-family:var(--font-mono); font-size:.63rem; padding:3px 8px; border-radius:2px; background:#d9ecda; color:var(--green-ok);}
+  .matrix-row .src.bazaar{background:var(--red-bg); color:var(--red);}
+  .add-row{display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; font-family:var(--font-mono); font-size:.75rem; color:var(--red); cursor:pointer;}
+
+  .metric-strip{display:grid; grid-template-columns:1fr 1fr 1fr; border-bottom:1px solid var(--line);}
+  .metric-strip div{padding:16px 14px; text-align:left; border-right:1px solid var(--line);}
+  .metric-strip div:last-child{border-right:none;}
+  .metric-strip .lbl{font-family:var(--font-mono); font-size:.6rem; text-transform:uppercase; color:var(--ink-soft); letter-spacing:.04em; margin-bottom:6px;}
+  .metric-strip .num{font-family:var(--font-display); font-weight:700; color:var(--navy); font-size:1.15rem;}
+  .metric-strip .num small{font-size:.7rem; font-weight:500; color:var(--ink-soft);}
+
+  .expend{padding:18px 20px;}
+  .expend .lbl{font-family:var(--font-mono); font-size:.68rem; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;}
+  .bar{display:flex; height:10px; border-radius:6px; overflow:hidden; margin-bottom:10px;}
+  .bar span{height:100%;}
+  .legend{display:flex; gap:16px; font-family:var(--font-mono); font-size:.7rem; color:var(--ink-soft);}
+  .legend i{width:9px;height:9px;display:inline-block;border-radius:2px;margin-right:5px;}
+
+  .chart-box{padding:18px 20px; border-top:1px solid var(--line);}
+  .chart-box .lbl{font-family:var(--font-mono); font-size:.68rem; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;}
+  svg.trend{width:100%; height:140px;}
+  .cfg-btn{font-family:var(--font-mono); font-size:.65rem; border:1px solid var(--line); border-radius:2px; padding:5px 10px; background:transparent; float:right; margin-top:-30px; cursor:pointer;}
+
+  .scale-card{background:var(--navy); color:var(--cream); border-radius:var(--radius);}
+  .scale-card .card-head h2{color:var(--cream); border-bottom:none;}
+  .scale-card .card-head{border-bottom:1px solid rgba(255,255,255,.12);}
+  .scale-body{padding:20px;}
+  .scale-body .lbl{font-family:var(--font-mono); font-size:.65rem; text-transform:uppercase; color:#aeb8ae; margin-bottom:10px;}
+  .stepper{display:flex; align-items:center; gap:10px; margin-bottom:20px;}
+  .stepper button{width:34px;height:34px;border-radius:2px; border:1px solid #33424b; background:#1e2c34; color:var(--cream); font-size:1rem; cursor:pointer;}
+  .stepper .num{flex:1; text-align:center; background:#fff; color:var(--navy); font-family:var(--font-display); font-weight:700; font-size:1.4rem; padding:10px; border-radius:2px;}
+
+  .budget-box{background:#fff; color:var(--navy); border-radius:2px; padding:18px; margin-bottom:16px; position:relative;}
+  .budget-box .lbl{color:var(--ink-soft);}
+  .budget-box .val{font-family:var(--font-display); font-size:1.6rem; font-weight:700; color:var(--green-ok);}
+  .budget-box .foot-stats{position:absolute; right:18px; bottom:18px; text-align:right; font-family:var(--font-mono); font-size:.7rem; color:var(--ink-soft);}
+  .budget-box .foot-stats b{display:block; color:var(--navy); font-size:.85rem;}
+
+  .risk{background:#1e2c26; border-left:3px solid var(--amber); border-radius:2px; padding:14px 16px; font-size:.8rem; line-height:1.55; margin-bottom:16px;}
+  .risk strong{display:flex; align-items:center; gap:6px; color:var(--amber); font-family:var(--font-display); margin-bottom:6px;}
+
+  .export-btn{width:100%; background:var(--cream); color:var(--navy); border:none; border-radius:2px; padding:14px; font-family:var(--font-mono); font-size:.78rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;}
+</style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="brand">PANAH</div>
+    <nav>
+      <a href="home.html" class=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>HOME</a>
+      <a href="build.html" class=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21v-6l9-9 6 6-9 9H4Z"/><path d="M14 7l3-3 3 3-3 3"/></svg>BUILD</a>
+      <a href="cost-estimation.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M8 4v16"/></svg>COST ESTIMATION</a>
+      <a href="history.html" class=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>HISTORY</a>
+      <a href="guideline.html" class=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg>STANDARDS</a>
+    </nav>
+    <div class="right">
+      <div class="iconbtn" title="Settings" onclick="location.href='settings.html'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>
+      </div>
+      <div class="iconbtn solid" id="profileToggle" title="Account" onclick="location.href='profile-dropdown.html'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+    </div>
+  </header>
+  <div class="page-head" style="position:relative;">
+    <h1>Cost Estimation Module</h1>
+    <p>Project: PANAH_SHELTER_V2 // Phase: Pre-Deployment</p>
+    <div class="total-box">
+      <div class="lbl">Estimated Total</div>
+      <div class="val">84.60 PKR <span>/ unit</span></div>
+    </div>
+  </div>
+
+  <div class="three-col">
+
+    <div class="card">
+      <div class="card-head"><h2>Local Market Cost Matrix</h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+      <div class="matrix-row">
+        <div><div class="name">Bamboo Culms</div><span class="qty">4m x Qty 24</span></div>
+        <div><div class="price">0.00 PKR</div><span class="src">Site Sourced</span></div>
+      </div>
+      <div class="matrix-row">
+        <div><div class="name">Recycled Corrugated Tin</div><span class="qty">12 sheets</span></div>
+        <div><div class="price">4.50 PKR</div><span class="src bazaar">Bazaar</span></div>
+      </div>
+      <div class="matrix-row">
+        <div><div class="name">Steel Fasteners</div><span class="qty">Qty 32</span></div>
+        <div><div class="price">0.80 PKR</div><span class="src">NGO Depot</span></div>
+      </div>
+      <div class="matrix-row">
+        <div><div class="name">Mud Fill</div><span class="qty">3.5m&sup3;</span></div>
+        <div><div class="price">0.00 PKR</div><span class="src">On-Site</span></div>
+      </div>
+      <div class="matrix-row">
+        <div><div class="name">Bamboo Culms</div><span class="qty">4m x Qty 24</span></div>
+        <div><div class="price">0.00 PKR</div><span class="src">Site Sourced</span></div>
+      </div>
+      <div class="matrix-row">
+        <div><div class="name">Steel Fasteners</div><span class="qty">Qty 32</span></div>
+        <div><div class="price">0.80 PKR</div><span class="src">NGO Depot</span></div>
+      </div>
+      <div class="add-row">+ Add Logistics Overhead</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Efficiency Analytics</h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="10" width="4" height="10"/><rect x="10" y="4" width="4" height="16"/><rect x="16" y="13" width="4" height="7"/></svg></div>
+      <div class="metric-strip">
+        <div><div class="lbl">Cost / m&sup2;</div><div class="num">2.82 <small>PKR</small></div></div>
+        <div><div class="lbl">Struct. Rating</div><div class="num">94<small>/100</small></div></div>
+        <div><div class="lbl">Sourcing Ratio</div><div class="num">72%<small> Local</small></div></div>
+      </div>
+      <div class="expend">
+        <div class="lbl">Expenditure Distribution</div>
+        <div class="bar">
+          <span style="width:40%; background:#3f7a4d;"></span>
+          <span style="width:42%; background:#a3382f;"></span>
+          <span style="width:18%; background:#c99a3c;"></span>
+        </div>
+        <div class="legend">
+          <span><i style="background:#3f7a4d;"></i>Local</span>
+          <span><i style="background:#a3382f;"></i>Commercial</span>
+          <span><i style="background:#c99a3c;"></i>Logistics</span>
+        </div>
+      </div>
+      <div class="chart-box">
+        <div class="lbl">Cost vs Structural Integrity Trade-off</div>
+        <svg class="trend" viewBox="0 0 300 100" preserveAspectRatio="none">
+          <path d="M0,80 C60,60 100,20 300,10" fill="none" stroke="#3f7a4d" stroke-width="2"/>
+          <path d="M0,90 C60,70 120,45 300,35" fill="none" stroke="#a3382f" stroke-width="2"/>
+          <path d="M0,95 C80,90 140,75 300,60" fill="none" stroke="#c99a3c" stroke-width="2"/>
+          <line x1="180" y1="0" x2="180" y2="100" stroke="#c9c9bb" stroke-dasharray="3 3"/>
+          <circle cx="180" cy="30" r="4" fill="#3f7a4d"/>
+          <circle cx="180" cy="55" r="4" fill="#a3382f"/>
+          <circle cx="180" cy="72" r="4" fill="#c99a3c"/>
+        </svg>
+        <button class="cfg-btn">Current Config</button>
+      </div>
+    </div>
+
+    <div class="card scale-card">
+      <div class="card-head"><h2>Deployment Scale</h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h16v16H4z"/><path d="M4 12h16"/></svg></div>
+      <div class="scale-body">
+        <div class="lbl">Family Shelters Needed</div>
+        <div class="stepper">
+          <button>&minus;</button>
+          <div class="num">250</div>
+          <button>+</button>
+        </div>
+
+        <div class="budget-box">
+          <div class="lbl">Total Budget Req.</div>
+          <div class="val">21,150 PKR</div>
+          <div class="foot-stats">
+            <b>6,000</b> Bamboo<br>
+            <b>3,000</b> Corrugated Sht.
+          </div>
+        </div>
+
+        <div class="risk">
+          <strong>&#9888; Procurement Risk Alert</strong>
+          Local bazaar tin supply bottleneck detected at &gt;200 units. Consider regional sourcing.
+        </div>
+
+        <button class="export-btn">&#128196; Export Auditable BOM</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
