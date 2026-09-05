@@ -34,7 +34,7 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
     if (!mountRef.current) return;
     const container = mountRef.current;
     const width = container.clientWidth || 600;
-    const heightPx = container.clientHeight || 420;
+    const heightPx = container.clientHeight || 600;
 
     // 1. Scene setup
     const scene = new THREE.Scene();
@@ -135,7 +135,7 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
     const handleResize = () => {
       if (!container || !rendererRef.current || !cameraRef.current) return;
       const w = container.clientWidth;
-      const h = container.clientHeight || 420;
+      const h = container.clientHeight || 600;
       if (w > 0 && h > 0) {
         cameraRef.current.aspect = w / h;
         cameraRef.current.updateProjectionMatrix();
@@ -147,7 +147,7 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = entry.contentRect.width;
-        const h = entry.contentRect.height || 420;
+        const h = entry.contentRect.height || 600;
         if (w > 0 && h > 0 && rendererRef.current && cameraRef.current) {
           cameraRef.current.aspect = w / h;
           cameraRef.current.updateProjectionMatrix();
@@ -331,36 +331,52 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div
         ref={mountRef}
         style={{
           width: '100%',
-          height: '420px',
-          borderRadius: 'var(--radius)',
+          height: '100%',
           overflow: 'hidden',
           cursor: viewMode === '3d' ? 'grab' : 'default',
         }}
       />
 
-      {/* Floating Canvas Toolbar matching Designs/build.html */}
+      {/* Floating Canvas Toolbar */}
       <div
         style={{
+          position: 'absolute',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
           justifyContent: 'center',
-          marginTop: '14px',
+          background: 'rgba(22, 35, 43, 0.85)',
+          backdropFilter: 'blur(12px)',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          zIndex: 10,
         }}
       >
         <button
-          className="btn"
           style={{
-            padding: '6px 10px',
-            fontSize: '0.72rem',
-            background: viewMode === '3d' ? '#dce7d2' : 'transparent',
-            borderColor: viewMode === '3d' ? 'var(--green-ok)' : 'var(--line)',
-            color: viewMode === '3d' ? 'var(--green-ok)' : 'var(--ink-soft)',
+            padding: '6px 12px',
+            fontSize: '0.75rem',
+            fontFamily: 'var(--font-mono)',
+            background: viewMode === '3d' ? 'var(--lime)' : 'transparent',
+            border: '1px solid',
+            borderColor: viewMode === '3d' ? 'var(--lime)' : 'rgba(255,255,255,0.2)',
+            color: viewMode === '3d' ? '#000' : '#fff',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
           }}
           onClick={() => setViewMode('3d')}
         >
@@ -368,24 +384,34 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
         </button>
 
         <button
-          className="btn"
           style={{
-            padding: '6px 10px',
-            fontSize: '0.72rem',
-            background: viewMode === '2d' ? '#dce7d2' : 'transparent',
-            borderColor: viewMode === '2d' ? 'var(--green-ok)' : 'var(--line)',
-            color: viewMode === '2d' ? 'var(--green-ok)' : 'var(--ink-soft)',
+            padding: '6px 12px',
+            fontSize: '0.75rem',
+            fontFamily: 'var(--font-mono)',
+            background: viewMode === '2d' ? 'var(--lime)' : 'transparent',
+            border: '1px solid',
+            borderColor: viewMode === '2d' ? 'var(--lime)' : 'rgba(255,255,255,0.2)',
+            color: viewMode === '2d' ? '#000' : '#fff',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
           }}
           onClick={() => setViewMode('2d')}
         >
           <Eye size={14} /> 2D Elevation
         </button>
 
-        <span style={{ width: '1px', height: '20px', background: 'var(--line)', margin: '0 6px' }} />
+        <span style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)', margin: '0 6px' }} />
 
         <button
-          className="iconbtn"
-          style={{ width: '32px', height: '32px', border: '1px solid var(--line)', color: 'var(--navy)' }}
+          style={{
+            width: '32px', height: '32px', border: '1px solid rgba(255,255,255,0.2)',
+            color: '#fff', background: 'transparent', borderRadius: '4px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+          }}
           title="Reset Camera"
           onClick={resetView}
         >
@@ -393,8 +419,11 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
         </button>
 
         <button
-          className="iconbtn"
-          style={{ width: '32px', height: '32px', border: '1px solid var(--line)', color: 'var(--navy)' }}
+          style={{
+            width: '32px', height: '32px', border: '1px solid rgba(255,255,255,0.2)',
+            color: '#fff', background: 'transparent', borderRadius: '4px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+          }}
           title="Zoom In"
           onClick={() => {
             if (cameraRef.current) {
@@ -407,8 +436,11 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
         </button>
 
         <button
-          className="iconbtn"
-          style={{ width: '32px', height: '32px', border: '1px solid var(--line)', color: 'var(--navy)' }}
+          style={{
+            width: '32px', height: '32px', border: '1px solid rgba(255,255,255,0.2)',
+            color: '#fff', background: 'transparent', borderRadius: '4px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+          }}
           title="Zoom Out"
           onClick={() => {
             if (cameraRef.current) {
@@ -420,7 +452,7 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
           <ZoomOut size={13} />
         </button>
 
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)', padding: '0 6px' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', padding: '0 6px', minWidth: '45px', textAlign: 'right' }}>
           {zoomLevel}%
         </span>
       </div>

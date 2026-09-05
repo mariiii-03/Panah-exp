@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Download, FileSpreadsheet } from 'lucide-react';
+import { Plus, Download, FileSpreadsheet, Trash2 } from 'lucide-react';
 
 interface BOMItem {
   id: string;
@@ -7,55 +7,59 @@ interface BOMItem {
   category: string;
   qty: number;
   unit: string;
-  priceUsd: number;
+  price: number;
   source: 'Local Bazaar' | 'Direct Depot' | 'Salvage';
 }
 
 export const CostEstimationPage: React.FC = () => {
-  const [currency, setCurrency] = useState<'USD' | 'PKR'>('PKR');
-  const [exchangeRate] = useState<number>(278); // USD to PKR rate
   const [scaleUnits, setScaleUnits] = useState<number>(25);
-  const [selectedRegion, setSelectedRegion] = useState<string>('south_asia');
+  const [laborRateHourly, setLaborRateHourly] = useState<number>(400); // PKR per hour
+  const [laborHours, setLaborHours] = useState<number>(76); // total hours for 1 shelter
+  const [logisticsDistance, setLogisticsDistance] = useState<number>(50); // km
+  const [logisticsVehicle, setLogisticsVehicle] = useState<'Pickup' | '3-Ton' | '10-Ton'>('Pickup');
+  const [fuelRate, setFuelRate] = useState<number>(280); // PKR per liter
+  const [bomItems, setBomItems] = useState<BOMItem[]>([]);
 
-  const [bomItems, setBomItems] = useState<BOMItem[]>([
-    { id: '1', name: 'Treated Bamboo Poles (Ø 90mm, 4.5m)', category: 'Framing', qty: 140, unit: 'poles', priceUsd: 1.10, source: 'Local Bazaar' },
-    { id: '2', name: 'Corrugated Galvanized Iron (28G)', category: 'Roofing', qty: 36, unit: 'sheets', priceUsd: 3.40, source: 'Direct Depot' },
-    { id: '3', name: 'Stabilized Plinth Mud Bricks', category: 'Foundation', qty: 450, unit: 'blocks', priceUsd: 0.12, source: 'Local Bazaar' },
-    { id: '4', name: 'Galvanized Hurricane Ties & Fasteners', category: 'Hardware', qty: 80, unit: 'pcs', priceUsd: 0.35, source: 'Direct Depot' },
-    { id: '5', name: 'PVC Rain Gutter & Drainage Tube', category: 'Plumbing', qty: 2, unit: 'lengths', priceUsd: 4.50, source: 'Local Bazaar' },
-  ]);
+  const handleDeleteItem = (id: string) => {
+    setBomItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
   const [newItemName, setNewItemName] = useState('');
   const [newItemQty, setNewItemQty] = useState(10);
-  const [newItemPrice, setNewItemPrice] = useState(1.5);
+  const [newItemPrice, setNewItemPrice] = useState(500);
   const [newItemUnit, setNewItemUnit] = useState('pcs');
   const [newItemSource, setNewItemSource] = useState<'Local Bazaar' | 'Direct Depot' | 'Salvage'>('Local Bazaar');
   const [showAddRow, setShowAddRow] = useState(false);
 
   // Calculations
-  const materialsTotalUsd = bomItems.reduce((acc, item) => acc + item.qty * item.priceUsd, 0);
+  const materialsTotal = bomItems.reduce((acc, item) => acc + item.qty * item.price, 0);
 
-  // Regional labor estimates
-  const laborHours = 76; // total hours for 1 shelter
-  const laborRateHourly = selectedRegion === 'south_asia' ? 1.50 : selectedRegion === 'central_asia' ? 1.80 : 1.20;
-  const laborTotalUsd = laborHours * laborRateHourly;
+  // Custom labor estimates
+  const laborTotal = laborHours * laborRateHourly;
 
   // Transport & Contingency
-  const transportTotalUsd = 35.0;
+  let vehicleBaseFee = 1500;
+  let vehicleKmPerLiter = 8;
+  if (logisticsVehicle === '3-Ton') {
+    vehicleBaseFee = 3000;
+    vehicleKmPerLiter = 6;
+  } else if (logisticsVehicle === '10-Ton') {
+    vehicleBaseFee = 8000;
+    vehicleKmPerLiter = 4;
+  }
+  const vehicleKmRate = fuelRate / vehicleKmPerLiter;
+  const transportTotal = vehicleBaseFee + (logisticsDistance * vehicleKmRate);
   const contingencyRate = 0.10; // 10%
-  const subtotal = materialsTotalUsd + laborTotalUsd + transportTotalUsd;
-  const contingencyUsd = subtotal * contingencyRate;
-  const totalPerShelterUsd = subtotal + contingencyUsd;
+  const subtotal = materialsTotal + laborTotal + transportTotal;
+  const contingencyAmount = subtotal * contingencyRate;
+  const totalPerShelter = subtotal + contingencyAmount;
 
   // Scale economy discount: 1-10: 0%, 11-50: 4%, 51-200: 7%, 200+: 10%
   const discountFactor = scaleUnits > 200 ? 0.90 : scaleUnits > 50 ? 0.93 : scaleUnits > 10 ? 0.96 : 1.0;
-  const totalProgramBudgetUsd = totalPerShelterUsd * scaleUnits * discountFactor;
+  const totalProgramBudget = totalPerShelter * scaleUnits * discountFactor;
 
-  const formatPrice = (usd: number) => {
-    if (currency === 'PKR') {
-      return `₨ ${Math.round(usd * exchangeRate).toLocaleString()}`;
-    }
-    return `$${usd.toFixed(2)}`;
+  const formatPrice = (pkr: number) => {
+    return `₨ ${Math.round(pkr).toLocaleString()}`;
   };
 
   const handleAddItem = (e: React.FormEvent) => {
@@ -69,7 +73,7 @@ export const CostEstimationPage: React.FC = () => {
         category: 'Custom',
         qty: newItemQty,
         unit: newItemUnit,
-        priceUsd: newItemPrice,
+        price: newItemPrice,
         source: newItemSource,
       },
     ]);
@@ -78,9 +82,9 @@ export const CostEstimationPage: React.FC = () => {
   };
 
   const handleExportCsv = () => {
-    const headers = ['Item Name,Category,Quantity,Unit,Unit Price USD,Total USD,Source'];
+    const headers = ['Item Name,Category,Quantity,Unit,Unit Price PKR,Total PKR,Source'];
     const rows = bomItems.map(
-      (i) => `"${i.name}","${i.category}",${i.qty},"${i.unit}",${i.priceUsd},${(i.qty * i.priceUsd).toFixed(2)},"${i.source}"`
+      (i) => `"${i.name}","${i.category}",${i.qty},"${i.unit}",${i.price},${(i.qty * i.price).toFixed(2)},"${i.source}"`
     );
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -111,43 +115,6 @@ export const CostEstimationPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', background: 'rgba(22, 35, 43, 0.08)', border: '1px solid var(--line)', borderRadius: '6px', padding: '3px' }}>
-            <button
-              onClick={() => setCurrency('USD')}
-              style={{
-                background: currency === 'USD' ? 'var(--navy)' : 'transparent',
-                color: currency === 'USD' ? '#fff' : 'var(--navy)',
-                border: 'none',
-                padding: '6px 14px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                borderRadius: '4px',
-                transition: 'all 0.18s ease',
-              }}
-            >
-              USD ($)
-            </button>
-            <button
-              onClick={() => setCurrency('PKR')}
-              style={{
-                background: currency === 'PKR' ? 'var(--navy)' : 'transparent',
-                color: currency === 'PKR' ? '#fff' : 'var(--navy)',
-                border: 'none',
-                padding: '6px 14px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                borderRadius: '4px',
-                transition: 'all 0.18s ease',
-              }}
-            >
-              PKR (₨)
-            </button>
-          </div>
-
           <div
             style={{
               background: 'var(--cream)',
@@ -161,7 +128,7 @@ export const CostEstimationPage: React.FC = () => {
               UNIT COST / SHELTER
             </div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.65rem', fontWeight: 700, color: 'var(--green-ok)' }}>
-              {formatPrice(totalPerShelterUsd)}
+              {formatPrice(totalPerShelter)}
             </div>
           </div>
         </div>
@@ -225,16 +192,52 @@ export const CostEstimationPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--navy)', fontSize: '0.95rem' }}>
-                    {formatPrice(item.qty * item.priceUsd)}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--navy)', fontSize: '0.95rem' }}>
+                      {formatPrice(item.qty * item.price)}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: 'var(--ink-soft)' }}>
+                      {formatPrice(item.price)} / {item.unit}
+                    </div>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: 'var(--ink-soft)' }}>
-                    {formatPrice(item.priceUsd)} / {item.unit}
-                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem(item.id)}
+                    title="Delete item"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--ink-soft)',
+                      cursor: 'pointer',
+                      padding: '6px',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--red)';
+                      e.currentTarget.style.background = 'var(--red-bg)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--ink-soft)';
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
             ))}
+
+            {bomItems.length === 0 && (
+              <div style={{ padding: '32px 20px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--ink-soft)' }}>
+                No materials in BOM. Click "Add Custom Line Item" below to add materials.
+              </div>
+            )}
 
             {showAddRow ? (
               <form onSubmit={handleAddItem} style={{ padding: '16px 20px', background: 'var(--cream-dim)' }}>
@@ -326,7 +329,7 @@ export const CostEstimationPage: React.FC = () => {
                   Materials
                 </div>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--navy)', fontSize: '1.1rem' }}>
-                  {formatPrice(materialsTotalUsd)}
+                  {formatPrice(materialsTotal)}
                 </div>
               </div>
 
@@ -335,7 +338,7 @@ export const CostEstimationPage: React.FC = () => {
                   Labor
                 </div>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--navy)', fontSize: '1.1rem' }}>
-                  {formatPrice(laborTotalUsd)}
+                  {formatPrice(laborTotal)}
                 </div>
               </div>
 
@@ -344,7 +347,7 @@ export const CostEstimationPage: React.FC = () => {
                   Logistics
                 </div>
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--navy)', fontSize: '1.1rem' }}>
-                  {formatPrice(transportTotalUsd + contingencyUsd)}
+                  {formatPrice(transportTotal + contingencyAmount)}
                 </div>
               </div>
             </div>
@@ -356,19 +359,19 @@ export const CostEstimationPage: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', height: '12px', borderRadius: '6px', overflow: 'hidden', marginBottom: '12px' }}>
-                <span style={{ width: `${(materialsTotalUsd / totalPerShelterUsd) * 100}%`, background: 'var(--green-ok)' }} title="Materials" />
-                <span style={{ width: `${(laborTotalUsd / totalPerShelterUsd) * 100}%`, background: 'var(--amber)' }} title="Labor" />
-                <span style={{ width: `${((transportTotalUsd + contingencyUsd) / totalPerShelterUsd) * 100}%`, background: 'var(--red)' }} title="Logistics & Contingency" />
+                <span style={{ width: `${(materialsTotal / totalPerShelter) * 100}%`, background: 'var(--green-ok)' }} title="Materials" />
+                <span style={{ width: `${(laborTotal / totalPerShelter) * 100}%`, background: 'var(--amber)' }} title="Labor" />
+                <span style={{ width: `${((transportTotal + contingencyAmount) / totalPerShelter) * 100}%`, background: 'var(--red)' }} title="Logistics & Contingency" />
               </div>
 
               <div style={{ display: 'flex', gap: '14px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--ink-soft)', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <i style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--green-ok)', display: 'inline-block' }} />
-                  Materials ({Math.round((materialsTotalUsd / totalPerShelterUsd) * 100)}%)
+                  Materials ({Math.round((materialsTotal / totalPerShelter) * 100)}%)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <i style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--amber)', display: 'inline-block' }} />
-                  Labor ({Math.round((laborTotalUsd / totalPerShelterUsd) * 100)}%)
+                  Labor ({Math.round((laborTotal / totalPerShelter) * 100)}%)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <i style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--red)', display: 'inline-block' }} />
@@ -377,23 +380,89 @@ export const CostEstimationPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Regional Labor Benchmark */}
+            {/* Custom Labor & Time */}
             <div style={{ padding: '18px 20px', borderTop: '1px solid var(--line)' }}>
-              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '8px' }}>
-                Regional Labor Benchmark
-              </label>
-              <select
-                className="input"
-                style={{ width: '100%' }}
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-              >
-                <option value="south_asia">South Asia (Pakistan/India/Bangladesh - $1.50/hr)</option>
-                <option value="central_asia">Central Asia (Tajikistan/Kyrgyzstan - $1.80/hr)</option>
-                <option value="east_africa">East Africa (Horn of Africa Relief - $1.20/hr)</option>
-              </select>
-              <p style={{ margin: '8px 0 0', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
-                Standard construction team: 2 skilled carpenters + 4 community apprentices (estimated 76 team-hours).
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '8px' }}>
+                    Labor Rate (PKR/hr)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10"
+                    className="input"
+                    style={{ width: '100%' }}
+                    value={laborRateHourly}
+                    onChange={(e) => setLaborRateHourly(parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '8px' }}>
+                    Est. Team-Hours
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="input"
+                    style={{ width: '100%' }}
+                    value={laborHours}
+                    onChange={(e) => setLaborHours(parseInt(e.target.value, 10) || 1)}
+                  />
+                </div>
+              </div>
+              <p style={{ margin: '12px 0 0', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
+                Standard construction team: 2 skilled carpenters + 4 community apprentices (default: 76 team-hours).
+              </p>
+            </div>
+
+            {/* Logistics & Transport */}
+            <div style={{ padding: '18px 20px', borderTop: '1px solid var(--line)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '8px' }}>
+                    Distance to Site (km)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="input"
+                    style={{ width: '100%' }}
+                    value={logisticsDistance}
+                    onChange={(e) => setLogisticsDistance(parseInt(e.target.value, 10) || 1)}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '8px' }}>
+                    Fuel Rate (PKR/L)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="input"
+                    style={{ width: '100%' }}
+                    value={fuelRate}
+                    onChange={(e) => setFuelRate(parseFloat(e.target.value) || 280)}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '8px' }}>
+                    Transport Vehicle
+                  </label>
+                  <select
+                    className="input"
+                    style={{ width: '100%' }}
+                    value={logisticsVehicle}
+                    onChange={(e) => setLogisticsVehicle(e.target.value as any)}
+                  >
+                    <option value="Pickup">Pickup (1.5 Ton)</option>
+                    <option value="3-Ton">Mazda (3 Ton)</option>
+                    <option value="10-Ton">Truck (10 Ton)</option>
+                  </select>
+                </div>
+              </div>
+              <p style={{ margin: '12px 0 0', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
+                Cost formula: Base loading fee + (Distance * (Fuel Rate / Vehicle Fuel Efficiency)).
               </p>
             </div>
           </div>
@@ -443,7 +512,7 @@ export const CostEstimationPage: React.FC = () => {
               TOTAL PROGRAM BUDGET
             </div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700, color: 'var(--lime)', marginBottom: '4px' }}>
-              {formatPrice(totalProgramBudgetUsd)}
+              {formatPrice(totalProgramBudget)}
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>
               {scaleUnits > 10 ? `Includes ${(100 - discountFactor * 100).toFixed(0)}% bulk procurement efficiency` : 'Standard single-unit benchmark'}

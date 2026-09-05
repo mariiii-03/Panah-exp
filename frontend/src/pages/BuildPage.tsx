@@ -55,30 +55,12 @@ export const BuildPage: React.FC = () => {
             setSelectedProjectId(projs[0].id);
           }
         } else {
-          setProjects([
-            {
-              id: 1,
-              name: 'Sindh Monsoon Emergency Shelter (District Dadu)',
-              location: 'Dadu, Sindh, Pakistan',
-              status: 'certified',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ]);
+          setProjects([]);
         }
       })
       .catch((err) => {
-        console.warn('Backend unavailable, loading local project template:', err);
-        setProjects([
-          {
-            id: 1,
-            name: 'Sindh Monsoon Emergency Shelter (District Dadu)',
-            location: 'Dadu, Sindh, Pakistan',
-            status: 'certified',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
+        console.warn('Backend unavailable:', err);
+        setProjects([]);
       });
   }, []);
 
@@ -156,243 +138,251 @@ export const BuildPage: React.FC = () => {
   const structuralScore = (sphereAreaOk ? 30 : 15) + (pitchOk ? 35 : 15) + (heightOk ? 25 : 10);
 
   return (
-    <div className="page-wrap">
-      {/* Header Context Bar */}
+    <div style={{ height: 'calc(100vh - 62px)', display: 'flex', flexDirection: 'column', background: '#1e1e1e', color: '#ccc', overflow: 'hidden' }}>
+      
+      {/* Editor Header / Top Ribbon */}
       <div
-        className="page-head"
         style={{
+          height: '52px',
+          background: '#252526',
+          borderBottom: '1px solid #333',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '16px',
+          padding: '0 20px',
+          flexShrink: 0,
         }}
       >
-        <div>
-          <h1>Parametric Design & Assessment Engine</h1>
-          <p>CANONICAL SPECIFICATION & STRUCTURAL PRESCREENING</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div>
+            <h1 style={{ fontSize: '0.9rem', margin: 0, color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 600 }}>Shelter Maker Engine</h1>
+            <p style={{ margin: 0, fontSize: '0.65rem', fontFamily: 'var(--font-mono)', color: '#888', textTransform: 'uppercase' }}>Parametric Design & Structural Prescreening</p>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <label style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--navy)' }}>
-            ACTIVE PROJECT:
-          </label>
           <select
-            className="input"
-            value={selectedProjectId}
+            style={{
+              background: '#3c3c3c',
+              border: '1px solid #555',
+              color: '#fff',
+              padding: '6px 12px',
+              borderRadius: '3px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.75rem',
+              outline: 'none',
+              cursor: 'pointer',
+            }}
+            value={selectedProjectId || ''}
             onChange={(e) => {
               const id = parseInt(e.target.value, 10);
-              setSelectedProjectId(id);
-              setSearchParams({ projectId: id.toString() });
+              if (id) {
+                setSelectedProjectId(id);
+                setSearchParams({ projectId: id.toString() });
+              }
             }}
           >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                #{p.id} — {p.name} ({p.location})
-              </option>
-            ))}
+            {projects.length === 0 ? (
+              <option value="">No registered projects (create one on Home)</option>
+            ) : (
+              projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  #{p.id} — {p.name} ({p.location})
+                </option>
+              ))
+            )}
           </select>
+
+          <button
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: '#007acc', color: '#fff', border: 'none',
+              padding: '6px 12px', borderRadius: '3px', cursor: 'pointer',
+              fontFamily: 'var(--font-mono)', fontSize: '0.75rem',
+              opacity: isCalculating ? 0.7 : 1,
+            }}
+            onClick={runCalculations}
+            disabled={isCalculating}
+          >
+            <RefreshCw size={12} className={isCalculating ? 'spin' : ''} />
+            {isCalculating ? 'Building...' : 'Compile & Analyze'}
+          </button>
+          
+          <button
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'transparent', color: '#fff', border: '1px solid #555',
+              padding: '6px 12px', borderRadius: '3px', cursor: 'pointer',
+              fontFamily: 'var(--font-mono)', fontSize: '0.75rem',
+            }}
+            onClick={handleDownloadPdf}
+            disabled={downloadingReport}
+          >
+            <Download size={12} />
+            {downloadingReport ? 'Generating...' : 'Export Specs'}
+          </button>
         </div>
       </div>
 
-      {/* Main Grid Layout matching Designs/build.html */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 340px',
-          gap: '24px',
-          padding: '0 32px 48px',
-        }}
-      >
-        {/* Left Column: 3D Canvas & Material Spec */}
-        <div>
-          <div className="card" style={{ marginBottom: '24px', overflow: 'hidden' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px 20px',
-                borderBottom: '1px solid var(--line)',
-                background: 'var(--cream-dim)',
-              }}
-            >
-              <span
-                style={{
-                  background: 'var(--navy)',
-                  color: 'var(--cream)',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.68rem',
-                  padding: '4px 10px',
-                  borderRadius: '2px',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                3D PARAMETRIC TRUSS & SKELETON
-              </span>
-
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
-                {span}m × {length}m • Area: {floorArea.toFixed(1)} m² • {areaPerPerson} m²/person
-              </span>
-            </div>
-
-            <div style={{ padding: '16px' }}>
-              <ShelterCanvas3D
-                span={span}
-                length={length}
-                height={height}
-                pitch={pitch}
-                material={materialType}
-              />
-            </div>
+      {/* Editor Workspace */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        
+        {/* Diagnostics (Left Sidebar) */}
+        <div style={{ width: '280px', background: '#252526', borderRight: '1px solid #333', display: 'flex', flexDirection: 'column', flexShrink: 0, overflowY: 'auto' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', background: '#2d2d2d', color: '#fff', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Diagnostics Console
           </div>
-
-          {/* Warning Banner */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '12px',
-              background: 'var(--red-bg)',
-              border: '1px solid rgba(163,56,47,0.3)',
-              borderRadius: '3px',
-              padding: '16px',
-              marginBottom: '24px',
-              alignItems: 'flex-start',
-            }}
-          >
-            <AlertTriangle size={20} color="var(--red)" style={{ flexShrink: 0, marginTop: '2px' }} />
-            <div>
-              <strong style={{ display: 'block', color: 'var(--red)', fontFamily: 'var(--font-display)', marginBottom: '4px', fontSize: '0.92rem' }}>
-                Engineering Alert: Uplift Benchmark
-              </strong>
-              <p style={{ margin: 0, fontSize: '0.82rem', color: '#6b3530', lineHeight: 1.5 }}>
-                Wind uplift force ({windData ? (windData.governing_pressure_kpa ?? (windData.max_negative_pressure_pa / 1000)).toFixed(1) : '8.4'} kN equivalent) exceeds unanchored dead load at roof eaves. Ensure double-wire hurricane ties and post anchorage into the plinth foundation.
-              </p>
-            </div>
-          </div>
-
-          {/* Material & Component Parameters Specification Table */}
-          <div className="card">
-            <div className="card-head">
-              <h2>Component & Material Specifications</h2>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
-                EDITABLE PARAMETERS
-              </span>
+          
+          <div style={{ padding: '16px' }}>
+            {/* Resilience Score */}
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#aaa', marginBottom: '8px' }}>
+                <span>RESILIENCE SCORE</span>
+                <strong style={{ color: structuralScore >= 75 ? 'var(--lime)' : 'var(--amber)', fontSize: '0.85rem' }}>{structuralScore}/100</strong>
+              </div>
+              <div style={{ height: '6px', background: '#3c3c3c', borderRadius: '3px', overflow: 'hidden' }}>
+                <span style={{ display: 'block', height: '100%', width: `${structuralScore}%`, background: structuralScore >= 75 ? 'var(--lime)' : 'var(--amber)', transition: 'width 0.3s ease' }} />
+              </div>
             </div>
 
-            <div className="card-body" style={{ padding: '16px 20px' }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr 1fr 1fr',
-                  gap: '16px',
-                  marginBottom: '20px',
-                  paddingBottom: '16px',
-                  borderBottom: '1px solid var(--line)',
-                }}
-              >
-                <div>
-                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '6px' }}>
-                    Span (Width)
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="3.0"
-                      max="10.0"
-                      className="input"
-                      style={{ width: '80px' }}
-                      value={span}
-                      onChange={(e) => setSpan(parseFloat(e.target.value) || 5.0)}
-                    />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>meters</span>
-                  </div>
+            {/* Load telemetries */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+              <div style={{ background: '#1e1e1e', padding: '12px', borderRadius: '4px', border: '1px solid #333' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888', marginBottom: '6px' }}>
+                  <Wind size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom' }} /> WIND UPLIFT
                 </div>
-
-                <div>
-                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '6px' }}>
-                    Length (Ridge)
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="3.0"
-                      max="14.0"
-                      className="input"
-                      style={{ width: '80px' }}
-                      value={length}
-                      onChange={(e) => setLength(parseFloat(e.target.value) || 6.0)}
-                    />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>meters</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '6px' }}>
-                    Wall Height
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="1.8"
-                      max="4.0"
-                      className="input"
-                      style={{ width: '80px' }}
-                      value={height}
-                      onChange={(e) => setHeight(parseFloat(e.target.value) || 2.4)}
-                    />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>meters</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '6px' }}>
-                    Roof Slope / Pitch
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <input
-                      type="number"
-                      step="1"
-                      min="10"
-                      max="45"
-                      className="input"
-                      style={{ width: '80px' }}
-                      value={pitch}
-                      onChange={(e) => setPitch(parseInt(e.target.value, 10) || 22)}
-                    />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--ink-soft)' }}>degrees</span>
-                  </div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: '#fff', fontSize: '1.2rem' }}>
+                  {windData ? (windData.governing_pressure_kpa ?? (windData.max_negative_pressure_pa / 1000)).toFixed(2) : '1.25'} <small style={{ fontSize: '0.7rem', color: '#888' }}>kPa</small>
                 </div>
               </div>
 
-              {/* Members Specification rows matching Designs/build.html */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--navy)' }}>
-                      Roof Covering Envelope
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--ink-soft)' }}>
-                      SPEC: Corrugated Galvanized Iron (CGI) Sheets • 28 Gauge • 3.0m sheet length
-                    </div>
-                  </div>
-                  <span className="badge ok">In Stock (Bazaar)</span>
+              <div style={{ background: '#1e1e1e', padding: '12px', borderRadius: '4px', border: '1px solid #333' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888', marginBottom: '6px' }}>
+                  <Activity size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom' }} /> BASE SHEAR
                 </div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: '#fff', fontSize: '1.2rem' }}>
+                  {seismicData ? seismicData.results.base_shear_kn.toFixed(1) : '14.8'} <small style={{ fontSize: '0.7rem', color: '#888' }}>kN</small>
+                </div>
+              </div>
+            </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
+            {/* Compliance list */}
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888', marginBottom: '12px', borderBottom: '1px solid #333', paddingBottom: '6px' }}>
+                COMPLIANCE CHECKS
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  {sphereAreaOk ? <CheckCircle2 size={16} color="var(--lime)" /> : <AlertTriangle size={16} color="var(--amber)" />}
                   <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--navy)' }}>
-                      Main Framing Material
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--ink-soft)' }}>
-                      SPEC: Treated Bamboo Poles (Ø 90mm) or Reclaimed Pine Timber (100×100mm)
-                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#ddd' }}>Min Covered Area</div>
+                    <div style={{ fontSize: '0.65rem', color: '#888', fontFamily: 'var(--font-mono)' }}>{areaPerPerson} m²/p (Req: ≥ 3.5)</div>
                   </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  {pitchOk ? <CheckCircle2 size={16} color="var(--lime)" /> : <AlertTriangle size={16} color="var(--amber)" />}
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: '#ddd' }}>Monsoon Pitch Angle</div>
+                    <div style={{ fontSize: '0.65rem', color: '#888', fontFamily: 'var(--font-mono)' }}>{pitch}° (Req: ≥ 15°)</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  {heightOk ? <CheckCircle2 size={16} color="var(--lime)" /> : <AlertTriangle size={16} color="var(--amber)" />}
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: '#ddd' }}>Egress Clear Height</div>
+                    <div style={{ fontSize: '0.65rem', color: '#888', fontFamily: 'var(--font-mono)' }}>{height}m (Req: ≥ 2.0m)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+
+        {/* Main Canvas Viewport (Center) */}
+        <div style={{ flex: 1, position: 'relative', background: '#111' }}>
+          
+          {/* Engineering Warning Overlay */}
+          {windData && (windData.governing_pressure_kpa ?? (windData.max_negative_pressure_pa / 1000)) > 2.0 && (
+            <div style={{
+              position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: 10,
+              background: 'rgba(50, 10, 10, 0.85)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255, 50, 50, 0.3)',
+              padding: '12px 16px', borderRadius: '6px', display: 'flex', alignItems: 'flex-start', gap: '12px',
+              maxWidth: '480px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+            }}>
+              <AlertTriangle size={18} color="#ff6b6b" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong style={{ display: 'block', color: '#ff6b6b', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', marginBottom: '4px' }}>
+                  CRITICAL UPLIFT WARNING
+                </strong>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: '#ffaaaa', lineHeight: 1.4 }}>
+                  Uplift force ({(windData.governing_pressure_kpa ?? (windData.max_negative_pressure_pa / 1000)).toFixed(1)} kN) exceeds unanchored dead load. Ensure hurricane ties and post anchorage are specified in BOM.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <ShelterCanvas3D
+            span={span}
+            length={length}
+            height={height}
+            pitch={pitch}
+            material={materialType}
+          />
+        </div>
+
+        {/* Inspector (Right Sidebar) */}
+        <div style={{ width: '320px', background: '#252526', borderLeft: '1px solid #333', display: 'flex', flexDirection: 'column', flexShrink: 0, overflowY: 'auto' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', background: '#2d2d2d', color: '#fff', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Inspector
+          </div>
+
+          <div style={{ padding: '16px' }}>
+            
+            {/* Dimensions Transform Block */}
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>TRANSFORM</span>
+                <span>{floorArea.toFixed(1)} m²</span>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#ccc' }}>Span (Width) [X]</label>
+                  <input type="number" step="0.1" min="3.0" max="10.0" value={span} onChange={(e) => setSpan(parseFloat(e.target.value) || 5.0)}
+                    style={{ width: '70px', background: '#3c3c3c', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: '3px', fontSize: '0.75rem', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#ccc' }}>Length (Ridge) [Z]</label>
+                  <input type="number" step="0.1" min="3.0" max="14.0" value={length} onChange={(e) => setLength(parseFloat(e.target.value) || 6.0)}
+                    style={{ width: '70px', background: '#3c3c3c', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: '3px', fontSize: '0.75rem', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#ccc' }}>Wall Height [Y]</label>
+                  <input type="number" step="0.1" min="1.8" max="4.0" value={height} onChange={(e) => setHeight(parseFloat(e.target.value) || 2.4)}
+                    style={{ width: '70px', background: '#3c3c3c', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: '3px', fontSize: '0.75rem', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ fontSize: '0.75rem', color: '#ccc' }}>Roof Pitch [θ]</label>
+                  <input type="number" step="1" min="10" max="45" value={pitch} onChange={(e) => setPitch(parseInt(e.target.value, 10) || 22)}
+                    style={{ width: '70px', background: '#3c3c3c', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: '3px', fontSize: '0.75rem', outline: 'none' }} />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ height: '1px', background: '#333', margin: '0 -16px 24px -16px' }} />
+
+            {/* Materials Block */}
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888', marginBottom: '12px' }}>
+                MATERIALS & MESH
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: '#ccc', marginBottom: '6px' }}>Main Framing Structure</label>
                   <select
-                    className="input"
+                    style={{ width: '100%', background: '#3c3c3c', border: '1px solid #555', color: '#fff', padding: '6px 8px', borderRadius: '3px', fontSize: '0.75rem', outline: 'none' }}
                     value={materialType}
                     onChange={(e) => setMaterialType(e.target.value)}
                   >
@@ -401,174 +391,47 @@ export const BuildPage: React.FC = () => {
                     <option value="steel_connector">Light Gauge Steel Frame</option>
                   </select>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--navy)' }}>
-                      Plinth & Foundation
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--ink-soft)' }}>
-                      SPEC: Stabilized mud brick plinth (0.45m above high flood level mark)
-                    </div>
-                  </div>
-                  <span className="badge ok">Flood Protected</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--navy)' }}>
-                      Lateral Bracing
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--ink-soft)' }}>
-                      SPEC: Cross-diagonal tensile steel strapping & corner knee braces
-                    </div>
-                  </div>
-                  <span className="badge ok">ASCE 7 OK</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Structural Prescreening & Compliance Sidebar */}
-        <div>
-          <div className="card" style={{ marginBottom: '20px' }}>
-            <div className="card-head">
-              <h2>Structural Assessment</h2>
-              <span className={`badge ${structuralScore >= 75 ? 'ok' : 'warn'}`}>
-                {structuralScore >= 75 ? 'PASS' : 'WARNING'}
-              </span>
-            </div>
-
-            <div className="card-body">
-              {/* Score bar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '8px' }}>
-                <span>RESILIENCE SCORE</span>
-                <strong style={{ color: 'var(--navy)', fontSize: '0.95rem' }}>{structuralScore}/100</strong>
-              </div>
-
-              <div style={{ height: '8px', background: '#e2e0d4', borderRadius: '4px', overflow: 'hidden', marginBottom: '20px' }}>
-                <span
-                  style={{
-                    display: 'block',
-                    height: '100%',
-                    width: `${structuralScore}%`,
-                    background: structuralScore >= 75 ? 'var(--green-ok)' : 'var(--amber)',
-                    transition: 'width 0.3s ease',
-                  }}
-                />
-              </div>
-
-              {/* Load telemetries */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '20px' }}>
-                <div style={{ background: 'rgba(0,0,0,0.03)', padding: '10px', borderRadius: '2px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '4px' }}>
-                    <Wind size={11} style={{ display: 'inline', marginRight: '3px' }} /> Wind Uplift
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--navy)', fontSize: '1.1rem' }}>
-                    {windData ? (windData.governing_pressure_kpa ?? (windData.max_negative_pressure_pa / 1000)).toFixed(2) : '1.25'} <small style={{ fontSize: '0.7rem' }}>kPa</small>
+                
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: '#ccc', marginBottom: '6px' }}>Roof Envelope (Read Only)</label>
+                  <div style={{ background: '#1e1e1e', border: '1px dashed #444', padding: '8px', borderRadius: '3px', fontSize: '0.7rem', color: '#999' }}>
+                    CGI Sheets (28 Gauge, 3.0m)
                   </div>
                 </div>
 
-                <div style={{ background: 'rgba(0,0,0,0.03)', padding: '10px', borderRadius: '2px' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '4px' }}>
-                    <Activity size={11} style={{ display: 'inline', marginRight: '3px' }} /> Base Shear
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--navy)', fontSize: '1.1rem' }}>
-                    {seismicData ? seismicData.results.base_shear_kn.toFixed(1) : '14.8'} <small style={{ fontSize: '0.7rem' }}>kN</small>
-                  </div>
-                </div>
-              </div>
-
-              {/* Compliance list */}
-              <div style={{ borderTop: '1px solid var(--line)', paddingTop: '16px' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '10px' }}>
-                  MANDATORY STANDARDS CHECK
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem' }}>
-                    {sphereAreaOk ? <CheckCircle2 size={16} color="var(--green-ok)" /> : <AlertTriangle size={16} color="var(--red)" />}
-                    <div>
-                      <strong>Sphere Min Covered Area</strong>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
-                        {areaPerPerson} m²/p (Required: ≥ 3.5 m²/p)
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem' }}>
-                    {pitchOk ? <CheckCircle2 size={16} color="var(--green-ok)" /> : <AlertTriangle size={16} color="var(--red)" />}
-                    <div>
-                      <strong>Monsoon Pitch Angle</strong>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
-                        {pitch}° (Minimum: ≥ 15°)
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.8rem' }}>
-                    {heightOk ? <CheckCircle2 size={16} color="var(--green-ok)" /> : <AlertTriangle size={16} color="var(--red)" />}
-                    <div>
-                      <strong>Egress Clear Height</strong>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
-                        {height}m (Standard: ≥ 2.0m)
-                      </div>
-                    </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', color: '#ccc', marginBottom: '6px' }}>Plinth (Read Only)</label>
+                  <div style={{ background: '#1e1e1e', border: '1px dashed #444', padding: '8px', borderRadius: '3px', fontSize: '0.7rem', color: '#999' }}>
+                    Stabilized mud brick (0.45m high)
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Action Triggers */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ height: '1px', background: '#333', margin: '0 -16px 24px -16px' }} />
+
+            {/* Generate Variations AI Button */}
             <button
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '12px' }}
-              onClick={runCalculations}
-              disabled={isCalculating}
-            >
-              <RefreshCw size={14} className={isCalculating ? 'spin' : ''} />
-              {isCalculating ? 'Recalculating...' : 'Recalculate Structural Analysis'}
-            </button>
-
-            <button
-              className="btn btn-lime"
-              style={{ width: '100%', padding: '12px' }}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff',
+                border: 'none', padding: '10px 12px', borderRadius: '4px', cursor: 'pointer',
+                fontFamily: 'var(--font-mono)', fontSize: '0.75rem', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+              }}
               onClick={handleGenerateVariations}
             >
-              <Sparkles size={14} /> Generate Candidate Variations
+              <Sparkles size={14} /> AI Optimization Candidates
             </button>
-
-            <button
-              className="btn btn-outline"
-              style={{ width: '100%', padding: '12px' }}
-              onClick={handleDownloadPdf}
-              disabled={downloadingReport}
-            >
-              <Download size={14} />
-              {downloadingReport ? 'Generating PDF...' : 'Download Engineering Report (PDF)'}
-            </button>
-
+            
             {optimizationResult && (
-              <div
-                style={{
-                  background: 'var(--cream-dim)',
-                  border: '1px solid var(--line)',
-                  borderRadius: '3px',
-                  padding: '12px',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.72rem',
-                  color: 'var(--navy)',
-                  lineHeight: 1.4,
-                }}
-              >
+              <div style={{ marginTop: '12px', background: '#1e1e1e', border: '1px solid #10b981', padding: '12px', borderRadius: '4px', fontSize: '0.7rem', color: '#ddd', lineHeight: 1.5 }}>
                 {optimizationResult}
               </div>
             )}
+
           </div>
         </div>
+
       </div>
     </div>
   );

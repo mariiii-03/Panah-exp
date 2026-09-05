@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Hammer, DollarSign, Download, CheckCircle2, Activity, ShieldAlert } from 'lucide-react';
-import { fetchProjectsHistory, downloadReportPdf } from '../services/api';
+import { Search, MapPin, Hammer, DollarSign, Download, CheckCircle2, Activity, ShieldAlert, Trash2 } from 'lucide-react';
+import { fetchProjectsHistory, downloadReportPdf, deleteProject } from '../services/api';
 import type { ProjectHistoryItem } from '../services/api';
 
 export const HistoryPage: React.FC = () => {
@@ -11,112 +11,47 @@ export const HistoryPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadHistory = () => {
+    setLoading(true);
     fetchProjectsHistory()
       .then((data) => {
-        if (data && data.length > 0) {
-          setHistoryItems(data);
-        } else {
-          setHistoryItems([
-            {
-              id: 1,
-              name: 'Sindh Monsoon Emergency Shelter (District Dadu)',
-              location: 'Dadu, Sindh, Pakistan',
-              status: 'certified',
-              created_at: '2026-08-15T10:00:00Z',
-              updated_at: '2026-09-02T14:30:00Z',
-              site_count: 3,
-              material_count: 8,
-              candidate_count: 4,
-              generated_count: 6,
-              design_version_count: 2,
-            },
-            {
-              id: 2,
-              name: 'Balochistan Earthquake Resilient Transition Unit',
-              location: 'Harnai, Balochistan, Pakistan',
-              status: 'in_progress',
-              created_at: '2026-08-20T09:15:00Z',
-              updated_at: '2026-09-03T11:00:00Z',
-              site_count: 2,
-              material_count: 6,
-              candidate_count: 3,
-              generated_count: 4,
-              design_version_count: 1,
-            },
-            {
-              id: 3,
-              name: 'Khyber Riverine Flash-Flood High-Plinth Prototype',
-              location: 'Nowshera, Khyber Pakhtunkhwa, Pakistan',
-              status: 'review',
-              created_at: '2026-08-28T08:00:00Z',
-              updated_at: '2026-09-01T16:45:00Z',
-              site_count: 1,
-              material_count: 5,
-              candidate_count: 2,
-              generated_count: 3,
-              design_version_count: 1,
-            },
-          ]);
-        }
+        setHistoryItems(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
-        console.warn('Backend history service unavailable, using local cache:', err);
-        setHistoryItems([
-          {
-            id: 1,
-            name: 'Sindh Monsoon Emergency Shelter (District Dadu)',
-            location: 'Dadu, Sindh, Pakistan',
-            status: 'certified',
-            created_at: '2026-08-15T10:00:00Z',
-            updated_at: '2026-09-02T14:30:00Z',
-            site_count: 3,
-            material_count: 8,
-            candidate_count: 4,
-            generated_count: 6,
-            design_version_count: 2,
-          },
-          {
-            id: 2,
-            name: 'Balochistan Earthquake Resilient Transition Unit',
-            location: 'Harnai, Balochistan, Pakistan',
-            status: 'in_progress',
-            created_at: '2026-08-20T09:15:00Z',
-            updated_at: '2026-09-03T11:00:00Z',
-            site_count: 2,
-            material_count: 6,
-            candidate_count: 3,
-            generated_count: 4,
-            design_version_count: 1,
-          },
-          {
-            id: 3,
-            name: 'Khyber Riverine Flash-Flood High-Plinth Prototype',
-            location: 'Nowshera, Khyber Pakhtunkhwa, Pakistan',
-            status: 'review',
-            created_at: '2026-08-28T08:00:00Z',
-            updated_at: '2026-09-01T16:45:00Z',
-            site_count: 1,
-            material_count: 5,
-            candidate_count: 2,
-            generated_count: 3,
-            design_version_count: 1,
-          },
-        ]);
+        console.warn('Backend history service unavailable:', err);
+        setHistoryItems([]);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadHistory();
   }, []);
 
-  const filteredItems = historyItems.filter((item) => {
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || item.status.toLowerCase() === statusFilter.toLowerCase();
+  const handleDeleteProject = async (projectId: number, projectName: string) => {
+    if (!window.confirm(`Are you sure you want to delete project "${projectName}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await deleteProject(projectId);
+      setHistoryItems((prev) => (Array.isArray(prev) ? prev.filter((p) => p.id !== projectId) : []));
+    } catch (err: any) {
+      alert(`Failed to delete project: ${err.message}`);
+    }
+  };
+
+  const safeItems = Array.isArray(historyItems) ? historyItems : [];
+  const filteredItems = safeItems.filter((item) => {
+    const name = (item.name || '').toLowerCase();
+    const location = (item.location || '').toLowerCase();
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = name.includes(term) || location.includes(term);
+    const matchesStatus = statusFilter === 'ALL' || (item.status || '').toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const getStatusBadge = (status?: string) => {
+    switch ((status || '').toLowerCase()) {
       case 'certified':
         return <span className="badge ok"><CheckCircle2 size={11} /> Certified</span>;
       case 'in_progress':
@@ -259,8 +194,26 @@ export const HistoryPage: React.FC = () => {
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', fontFamily: 'var(--font-mono)', color: 'var(--ink-soft)' }}>
-                    No matching project records found.
+                  <td colSpan={6} style={{ padding: '60px 24px', textAlign: 'center' }}>
+                    <div style={{ maxWidth: '440px', margin: '0 auto' }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', color: 'var(--navy)', marginBottom: '8px', fontWeight: 600 }}>
+                        {safeItems.length === 0 ? 'No Projects in Audit Trail' : 'No Matching Records'}
+                      </div>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.5 }}>
+                        {safeItems.length === 0
+                          ? 'All placeholder records have been cleared. Create your first project from the dashboard to start logging audit history and calculations.'
+                          : 'No projects match your current search keywords or status filter.'}
+                      </p>
+                      {safeItems.length === 0 && (
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => navigate('/')}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                        >
+                          <Hammer size={14} /> Go to Home & Add Project
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -268,7 +221,7 @@ export const HistoryPage: React.FC = () => {
                   <tr key={item.id} className="table-row-hover" style={{ borderBottom: '1px solid var(--line)' }}>
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, color: 'var(--navy)', fontSize: '0.98rem' }}>
-                        {item.name}
+                        {item.name || 'Untitled Project'}
                       </div>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
                         REF: PANAH-00{item.id}
@@ -278,16 +231,16 @@ export const HistoryPage: React.FC = () => {
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--navy)' }}>
                         <MapPin size={14} color="var(--ink-soft)" />
-                        {item.location}
+                        {item.location || 'Unspecified'}
                       </div>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--ink-soft)', marginTop: '2px' }}>
-                        Registered: {new Date(item.created_at).toLocaleDateString()}
+                        Registered: {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recent'}
                       </div>
                     </td>
 
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--navy)' }}>
-                        {item.site_count} Site{item.site_count !== 1 ? 's' : ''} • {item.material_count} Material Types
+                        {(item.site_count ?? 0)} Site{(item.site_count ?? 0) !== 1 ? 's' : ''} • {(item.material_count ?? 0)} Material Types
                       </div>
                     </td>
 
@@ -326,6 +279,22 @@ export const HistoryPage: React.FC = () => {
                           onClick={() => handleDownload(item.name, item.id)}
                         >
                           <Download size={12} />
+                        </button>
+                        <button
+                          className="btn btn-outline"
+                          style={{
+                            padding: '6px 8px',
+                            fontSize: '0.72rem',
+                            color: 'var(--red)',
+                            borderColor: 'rgba(217, 83, 79, 0.35)',
+                          }}
+                          title="Delete Project"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProject(item.id, item.name);
+                          }}
+                        >
+                          <Trash2 size={12} />
                         </button>
                       </div>
                     </td>

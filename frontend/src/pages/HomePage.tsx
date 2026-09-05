@@ -1,50 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, ArrowRight, Wind, Activity, DollarSign, Hammer, CheckCircle2, ShieldAlert, ChevronDown } from 'lucide-react';
-import { fetchProjects, createProject, fetchDashboardStats } from '../services/api';
+import { Plus, ArrowRight, Wind, Activity, DollarSign, Hammer, CheckCircle2, ShieldAlert, ChevronDown, Trash2 } from 'lucide-react';
+import { fetchProjects, createProject, deleteProject, fetchDashboardStats } from '../services/api';
 import type { Project, DashboardStats } from '../services/api';
-import HeroBgAnimation from '../components/common/HeroBgAnimation';
-
-const DEFAULT_PROJECTS: Project[] = [
-  {
-    id: 1,
-    name: 'Sindh Monsoon Emergency Shelter (District Dadu)',
-    location: 'Dadu, Sindh, Pakistan',
-    status: 'certified',
-    created_at: '2026-08-15T10:00:00Z',
-    updated_at: '2026-09-02T14:30:00Z',
-  },
-  {
-    id: 2,
-    name: 'Balochistan Earthquake Resilient Transition Unit',
-    location: 'Harnai, Balochistan, Pakistan',
-    status: 'in_progress',
-    created_at: '2026-08-20T09:15:00Z',
-    updated_at: '2026-09-03T11:00:00Z',
-  },
-  {
-    id: 3,
-    name: 'Khyber Riverine Flash-Flood High-Plinth Prototype',
-    location: 'Nowshera, Khyber Pakhtunkhwa, Pakistan',
-    status: 'review',
-    created_at: '2026-08-28T08:00:00Z',
-    updated_at: '2026-09-01T16:45:00Z',
-  },
-];
-
-const DEFAULT_STATS: DashboardStats = {
-  total_projects: 3,
-  active_projects: 2,
-  total_sites: 6,
-  total_materials: 12,
-  total_candidates: 9,
-  total_generated_designs: 13,
-  total_design_versions: 4,
-  total_validation_runs: 18,
-  total_reviews: 7,
-  total_audit_events: 34,
-  recent_activity: [],
-};
+import heroBackground from '../assets/hero-background.png';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -61,16 +20,16 @@ export const HomePage: React.FC = () => {
     try {
       setLoading(true);
       const [pData, sData] = await Promise.all([
-        fetchProjects().catch(() => DEFAULT_PROJECTS),
-        fetchDashboardStats().catch(() => DEFAULT_STATS),
+        fetchProjects().catch(() => []),
+        fetchDashboardStats().catch(() => null),
       ]);
-      setProjects(pData && pData.length > 0 ? pData : DEFAULT_PROJECTS);
-      setStats(sData || DEFAULT_STATS);
+      setProjects(pData || []);
+      setStats(sData || null);
       setError(null);
     } catch (err: any) {
-      console.warn('Backend unavailable, rendering local project catalog:', err);
-      setProjects(DEFAULT_PROJECTS);
-      setStats(DEFAULT_STATS);
+      console.warn('Backend unavailable:', err);
+      setProjects([]);
+      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -79,6 +38,20 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleDeleteProject = async (projectId: number, projectName: string) => {
+    if (!window.confirm(`Are you sure you want to delete project "${projectName}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await deleteProject(projectId);
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      // Refresh stats
+      fetchDashboardStats().then(setStats).catch(() => {});
+    } catch (err: any) {
+      alert(`Failed to delete project: ${err.message}`);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,10 +122,17 @@ export const HomePage: React.FC = () => {
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        {/* Dynamic Organic HeroBgAnimation Canvas Background (no dark overlay) */}
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-          <HeroBgAnimation />
-        </div>
+        {/* Hero Background Image */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${heroBackground})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
 
         <div style={{ position: 'relative', zIndex: 2, maxWidth: '820px' }}>
           {/* Live System Status Chip */}
@@ -161,12 +141,13 @@ export const HomePage: React.FC = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(183, 239, 154, 0.3)',
+              background: 'rgba(22, 35, 43, 0.72)',
+              border: '1px solid rgba(183, 239, 154, 0.4)',
               borderRadius: '20px',
               padding: '6px 14px',
               marginBottom: '20px',
               backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
             }}
           >
             <span
@@ -203,7 +184,7 @@ export const HomePage: React.FC = () => {
                 fontSize: 'clamp(2.6rem, 5vw, 3.8rem)',
                 color: '#ffffff',
                 margin: 0,
-                textShadow: '0 2px 24px rgba(0,0,0,0.5)',
+                textShadow: '0 3px 20px rgba(0,0,0,0.85), 0 1px 3px rgba(0,0,0,0.95)',
               }}
             >
               PANAH
@@ -213,11 +194,13 @@ export const HomePage: React.FC = () => {
                 fontFamily: 'var(--font-mono)',
                 fontSize: 'clamp(1.4rem, 3vw, 2.0rem)',
                 color: 'var(--lime)',
-                background: 'rgba(183, 239, 154, 0.1)',
-                border: '1px solid rgba(183, 239, 154, 0.3)',
+                background: 'rgba(22, 35, 43, 0.75)',
+                border: '1px solid rgba(183, 239, 154, 0.4)',
                 padding: '2px 14px',
                 borderRadius: '6px',
                 lineHeight: 1.3,
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
               }}
             >
               پناگاہ
@@ -226,12 +209,13 @@ export const HomePage: React.FC = () => {
 
           <p
             style={{
-              color: '#d4dcce',
+              color: '#ffffff',
               fontSize: 'clamp(0.98rem, 1.8vw, 1.15rem)',
               lineHeight: 1.65,
               maxWidth: '680px',
               margin: '0 auto 26px',
-              fontWeight: 400,
+              fontWeight: 500,
+              textShadow: '0 2px 14px rgba(0,0,0,0.85), 0 1px 4px rgba(0,0,0,0.95)',
             }}
           >
             Rapid parametric structural assessment platform for humanitarian shelters. Real-time deterministic wind load calculations, seismic base shear checks, and automated Sphere Standard compliance.
@@ -307,18 +291,29 @@ export const HomePage: React.FC = () => {
               style={{
                 padding: '14px 24px',
                 fontSize: '0.88rem',
-                background: 'rgba(255,255,255,0.1)',
+                background: 'rgba(22, 35, 43, 0.85)',
                 color: '#fff',
-                border: '1px solid rgba(255,255,255,0.25)',
+                border: '1px solid rgba(255,255,255,0.3)',
                 textDecoration: 'none',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
               }}
             >
               <Hammer size={16} /> Open Parametric 3D CAD
             </Link>
             <Link
               to="/guideline"
-              className="btn btn-outline-white"
-              style={{ padding: '14px 22px', fontSize: '0.88rem' }}
+              className="btn"
+              style={{
+                padding: '14px 22px',
+                fontSize: '0.88rem',
+                background: 'rgba(22, 35, 43, 0.85)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.3)',
+                textDecoration: 'none',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+              }}
             >
               Standards Catalog <ArrowRight size={15} />
             </Link>
@@ -472,6 +467,48 @@ export const HomePage: React.FC = () => {
           <div style={{ padding: '60px', textAlign: 'center', fontFamily: 'var(--font-mono)', color: 'var(--navy)' }}>
             Loading field assessment data...
           </div>
+        ) : projects.length === 0 ? (
+          <div
+            style={{
+              padding: '64px 24px',
+              textAlign: 'center',
+              background: 'var(--cream)',
+              borderRadius: 'var(--radius)',
+              border: '2px dashed var(--line)',
+              boxShadow: 'var(--shadow-sm)',
+              maxWidth: '560px',
+              margin: '20px auto 40px',
+            }}
+          >
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                border: '1.5px solid var(--red)',
+                color: 'var(--red)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+              }}
+            >
+              <Plus size={28} />
+            </div>
+            <h4 style={{ color: 'var(--navy)', marginBottom: '8px', fontSize: '1.25rem' }}>
+              No Active Shelter Projects
+            </h4>
+            <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', maxWidth: '420px', margin: '0 auto 24px', lineHeight: 1.5 }}>
+              All placeholder projects have been removed. Click below to initialize a new humanitarian shelter assessment project.
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => setModalOpen(true)}
+              style={{ padding: '12px 28px', fontSize: '0.88rem' }}
+            >
+              <Plus size={16} /> Add New Project
+            </button>
+          </div>
         ) : (
           <div
             style={{
@@ -568,6 +605,25 @@ export const HomePage: React.FC = () => {
                       onClick={() => navigate(`/cost-estimation?projectId=${proj.id}`)}
                     >
                       <DollarSign size={13} /> Cost Model
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      style={{
+                        padding: '8px 10px',
+                        fontSize: '0.75rem',
+                        color: 'var(--red)',
+                        borderColor: 'rgba(217, 83, 79, 0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProject(proj.id, proj.name);
+                      }}
+                      title="Delete Project"
+                    >
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>

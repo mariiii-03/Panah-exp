@@ -155,6 +155,16 @@ export async function createProject(payload: { name: string; location: string })
   return res.json();
 }
 
+export async function deleteProject(projectId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/projects/${projectId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok && res.status !== 204 && res.status !== 404) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to delete project');
+  }
+}
+
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   const res = await fetch(`${API_BASE}/dashboard/stats`);
   if (!res.ok) throw new Error('Failed to load dashboard stats');
@@ -164,7 +174,10 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 export async function fetchProjectsHistory(): Promise<ProjectHistoryItem[]> {
   const res = await fetch(`${API_BASE}/projects-history`);
   if (!res.ok) throw new Error('Failed to load projects history');
-  return res.json();
+  const data = await res.json();
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.projects)) return data.projects;
+  return [];
 }
 
 export async function fetchMaterialCatalog(category?: string): Promise<MaterialItem[]> {

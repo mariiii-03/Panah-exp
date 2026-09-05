@@ -135,7 +135,6 @@ export const SettingsPage: React.FC = () => {
                 value={defaultCurrency}
                 onChange={(e) => setDefaultCurrency(e.target.value as any)}
               >
-                <option value="USD">USD ($) — International Cluster Standard</option>
                 <option value="PKR">PKR (₨) — Pakistan Regional Tender</option>
               </select>
             </div>
