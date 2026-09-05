@@ -134,7 +134,22 @@ export const HomePage: React.FC = () => {
           }}
         />
 
-        <div style={{ position: 'relative', zIndex: 2, maxWidth: '820px' }}>
+
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: '820px', width: '100%' }}>
+          <div
+            style={{
+              background: 'rgba(22, 35, 43, 0.55)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '24px',
+              padding: 'clamp(24px, 5vw, 48px)',
+              boxShadow: '0 32px 64px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
           {/* Live System Status Chip */}
           <div
             style={{
@@ -207,70 +222,23 @@ export const HomePage: React.FC = () => {
             </span>
           </div>
 
-          <p
-            style={{
-              color: '#ffffff',
-              fontSize: 'clamp(0.98rem, 1.8vw, 1.15rem)',
-              lineHeight: 1.65,
-              maxWidth: '680px',
-              margin: '0 auto 26px',
-              fontWeight: 500,
-              textShadow: '0 2px 14px rgba(0,0,0,0.85), 0 1px 4px rgba(0,0,0,0.95)',
-            }}
-          >
-            Rapid parametric structural assessment platform for humanitarian shelters. Real-time deterministic wind load calculations, seismic base shear checks, and automated Sphere Standard compliance.
-          </p>
-
-          {/* Engineering Capability Tags */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              gap: '10px',
-              marginBottom: '32px',
-            }}
-          >
-            <span
+            <p
               style={{
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '4px',
-                padding: '5px 11px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.72rem',
-                color: '#eceae0',
+                fontSize: 'clamp(0.98rem, 1.8vw, 1.15rem)',
+                lineHeight: 1.65,
+                maxWidth: '680px',
+                margin: '0 auto',
+                fontWeight: 400,
+                color: 'rgba(255, 255, 255, 0.9)',
               }}
             >
-              ✓ Deterministic Sphere Standard
-            </span>
-            <span
-              style={{
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '4px',
-                padding: '5px 11px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.72rem',
-                color: '#eceae0',
-              }}
-            >
-              ✓ Interactive Three.js 3D Wireframe
-            </span>
-            <span
-              style={{
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: '4px',
-                padding: '5px 11px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.72rem',
-                color: '#eceae0',
-              }}
-            >
-              ✓ Dynamic Bill of Materials & Costing
-            </span>
+              Rapid parametric structural assessment platform for humanitarian shelters. Real-time deterministic wind load calculations, seismic base shear checks, and automated Sphere Standard compliance.
+            </p>
           </div>
+          
+          <div style={{ height: '32px' }} />
+
+
 
           {/* Action CTAs */}
           <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>

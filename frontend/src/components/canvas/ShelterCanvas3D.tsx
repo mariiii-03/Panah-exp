@@ -7,7 +7,8 @@ interface ShelterCanvasProps {
   height: number;     // wall height meters (e.g. 2.4)
   length: number;     // shelter length meters (e.g. 6.0)
   pitch: number;      // roof pitch degrees (e.g. 22)
-  material: string;   // 'treated_bamboo' | 'reclaimed_timber' | 'corrugated_tin'
+  material: string;   // 'treated_bamboo' | 'reclaimed_timber' | 'steel_connector' | 'custom'
+  customColor?: string; // hex color string for custom material
 }
 
 export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
@@ -16,6 +17,7 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
   length,
   pitch,
   material,
+  customColor,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
@@ -42,7 +44,7 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
     sceneRef.current = scene;
 
     // 2. Camera setup
-    const camera = new THREE.PerspectiveCamera(45, width / heightPx, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(45, width / heightPx, 0.1, 1000);
     camera.position.set(8, 6, 10);
     camera.lookAt(0, 1.8, 0);
     cameraRef.current = camera;
@@ -187,6 +189,9 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
     let frameColor = 0x8a5a36; // Timber default
     if (material === 'treated_bamboo') frameColor = 0xbda062;
     if (material === 'steel_connector') frameColor = 0x546e7a;
+    if (material === 'custom' && customColor) {
+      frameColor = parseInt(customColor.replace('#', '0x'), 16);
+    }
 
     const frameMat = new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.6 });
     const plinthMat = new THREE.MeshStandardMaterial({ color: 0xc8bba9, roughness: 0.9 });
@@ -297,29 +302,28 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
     );
 
     // 6. Roof Covering Surface
+    const rafterLength = Math.sqrt(halfSpan * halfSpan + roofHeight * roofHeight);
+
+
     // Left roof slope plane
-    const leftSlopeGeom = new THREE.PlaneGeometry(
-      Math.sqrt(halfSpan * halfSpan + roofHeight * roofHeight),
-      length
-    );
+    const leftSlopeGeom = new THREE.PlaneGeometry(rafterLength, length);
     const leftSlope = new THREE.Mesh(leftSlopeGeom, roofMat);
     leftSlope.position.set(-halfSpan / 2, height + roofHeight / 2, 0);
-    leftSlope.rotation.y = Math.PI / 2;
-    leftSlope.rotation.x = Math.atan2(roofHeight, halfSpan);
+    leftSlope.rotation.order = 'ZYX';
+    leftSlope.rotation.z = Math.atan2(roofHeight, halfSpan);
+    leftSlope.rotation.x = -Math.PI / 2;
     group.add(leftSlope);
 
     // Right roof slope plane
-    const rightSlopeGeom = new THREE.PlaneGeometry(
-      Math.sqrt(halfSpan * halfSpan + roofHeight * roofHeight),
-      length
-    );
+    const rightSlopeGeom = new THREE.PlaneGeometry(rafterLength, length);
     const rightSlope = new THREE.Mesh(rightSlopeGeom, roofMat);
     rightSlope.position.set(halfSpan / 2, height + roofHeight / 2, 0);
-    rightSlope.rotation.y = Math.PI / 2;
-    rightSlope.rotation.x = -Math.atan2(roofHeight, halfSpan);
+    rightSlope.rotation.order = 'ZYX';
+    rightSlope.rotation.z = -Math.atan2(roofHeight, halfSpan);
+    rightSlope.rotation.x = -Math.PI / 2;
     group.add(rightSlope);
 
-  }, [span, height, length, pitch, material]);
+  }, [span, height, length, pitch, material, customColor]);
 
   const resetView = () => {
     rotationRef.current = { x: 0.35, y: -0.65 };
@@ -444,8 +448,11 @@ export const ShelterCanvas3D: React.FC<ShelterCanvasProps> = ({
           title="Zoom Out"
           onClick={() => {
             if (cameraRef.current) {
-              cameraRef.current.position.multiplyScalar(1.1);
-              setZoomLevel((z) => Math.max(50, Math.round(z * 0.9)));
+              const newPos = cameraRef.current.position.clone().multiplyScalar(1.1);
+              if (newPos.length() < 50) {
+                cameraRef.current.position.copy(newPos);
+                setZoomLevel((z) => Math.max(50, Math.round(z * 0.9)));
+              }
             }
           }}
         >

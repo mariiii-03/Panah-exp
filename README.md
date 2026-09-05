@@ -153,63 +153,65 @@ Project ──▶ Site ──▶ Capture ──▶ Media ──▶ Observations 
 
 ### Prerequisites
 
+- Node.js (v18+)
 - Python 3.11+
-- pip
+- npm
 
 ### Installation
 
+1. **Clone the repository**
 ```bash
-# Clone the repository
-git clone https://github.com/HaiqaKaleem/Panah.git
-cd Panah
+git clone https://github.com/mariiii-03/Panah-exp.git
+cd Panah-exp
+```
 
-# Create virtual environment
+2. **Install Root & Frontend Dependencies**
+```bash
+npm install
+cd frontend
+npm install
+cd ..
+```
+
+3. **Setup Backend Python Environment**
+```bash
+cd Backend
 python -m venv .venv
-
-# Activate
-# Windows:
-.venv\Scripts\activate
-# macOS/Linux:
-source .venv/bin/activate
-
-# Install dependencies
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
+cd ..
 ```
 
-### Run the Server
+### Run the Application
+
+You can run both the Frontend and Backend concurrently from the root directory using the npm scripts:
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Runs both frontend (Vite) and backend (FastAPI) concurrently
+npm run dev
 ```
 
-**API available at:** `http://localhost:8000`
-**Swagger docs:** `http://localhost:8000/docs`
-**ReDoc:** `http://localhost:8000/redoc`
+Alternatively, you can run them in separate terminals:
+```bash
+npm run dev:backend    # Runs FastAPI on http://localhost:8000
+npm run dev:frontend   # Runs React/Vite on http://localhost:5173
+```
+
+**Accessing the App:**
+- **Frontend App:** `http://localhost:5173`
+- **API Docs (Swagger):** `http://localhost:8000/docs`
+
+### Database Seeding (Optional)
+If you need to seed the database with initial placeholder data:
+```bash
+npm run seed
+```
 
 ### Run Tests
-
 ```bash
-# Full suite
-python -m pytest tests/ -v
-
-# Quick check
-python -m pytest tests/ -q --no-header
-
-# Specific module
-python -m pytest tests/test_engineering.py -v
-```
-
-### Open 3D Viewer
-
-```bash
-# Windows
-start docs/viewer3d.html
-
-# macOS
-open docs/viewer3d.html
-
-# Linux
-xdg-open docs/viewer3d.html
+# Run backend test suite
+npm run test:backend
 ```
 
 ---

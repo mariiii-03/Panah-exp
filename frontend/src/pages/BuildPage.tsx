@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -37,6 +37,8 @@ export const BuildPage: React.FC = () => {
   const [height, setHeight] = useState<number>(2.4);
   const [pitch, setPitch] = useState<number>(22);
   const [materialType, setMaterialType] = useState<string>('treated_bamboo');
+  const [customMaterialName, setCustomMaterialName] = useState<string>('My Custom Material');
+  const [customMaterialColor, setCustomMaterialColor] = useState<string>('#90a4ae');
 
   // Engineering Telemetry state
   const [windData, setWindData] = useState<WindLoadResponse | null>(null);
@@ -136,6 +138,22 @@ export const BuildPage: React.FC = () => {
   const pitchOk = pitch >= 15;
   const heightOk = height >= 2.0;
   const structuralScore = (sphereAreaOk ? 30 : 15) + (pitchOk ? 35 : 15) + (heightOk ? 25 : 10);
+
+  if (projects.length === 0 || !selectedProjectId) {
+    return (
+      <div style={{ height: 'calc(100vh - 62px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#1e1e1e', color: '#ccc' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', color: '#fff', fontSize: '1.5rem', marginBottom: '8px' }}>Shelter Maker Engine</h1>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#888', marginBottom: '24px' }}>Please open a project to access the Builder.</p>
+        <Link
+          to="/"
+          className="btn btn-lime"
+          style={{ padding: '12px 24px', fontSize: '0.8rem', textDecoration: 'none', color: '#000', display: 'inline-block' }}
+        >
+          Go to Projects
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div style={{ height: 'calc(100vh - 62px)', display: 'flex', flexDirection: 'column', background: '#1e1e1e', color: '#ccc', overflow: 'hidden' }}>
@@ -328,6 +346,7 @@ export const BuildPage: React.FC = () => {
             height={height}
             pitch={pitch}
             material={materialType}
+            customColor={customMaterialColor}
           />
         </div>
 
@@ -389,8 +408,24 @@ export const BuildPage: React.FC = () => {
                     <option value="treated_bamboo">Treated Structural Bamboo</option>
                     <option value="reclaimed_timber">Reclaimed Pine Timber</option>
                     <option value="steel_connector">Light Gauge Steel Frame</option>
+                    <option value="custom">Custom Material (Manual)</option>
                   </select>
                 </div>
+                
+                {materialType === 'custom' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#222', padding: '10px', borderRadius: '4px', border: '1px dashed #555' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <label style={{ fontSize: '0.7rem', color: '#aaa' }}>Name</label>
+                      <input type="text" value={customMaterialName} onChange={(e) => setCustomMaterialName(e.target.value)}
+                        style={{ width: '120px', background: '#3c3c3c', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: '3px', fontSize: '0.7rem', outline: 'none' }} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <label style={{ fontSize: '0.7rem', color: '#aaa' }}>Color (Hex)</label>
+                      <input type="color" value={customMaterialColor} onChange={(e) => setCustomMaterialColor(e.target.value)}
+                        style={{ width: '120px', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, height: '24px' }} />
+                    </div>
+                  </div>
+                )}
                 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.75rem', color: '#ccc', marginBottom: '6px' }}>Roof Envelope (Read Only)</label>
