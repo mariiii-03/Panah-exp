@@ -201,7 +201,7 @@ export const HistoryPage: React.FC = () => {
                       </div>
                       <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.5 }}>
                         {safeItems.length === 0
-                          ? 'All placeholder records have been cleared. Create your first project from the dashboard to start logging audit history and calculations.'
+                          ? 'Create your first project from the dashboard to start logging audit history and calculations.'
                           : 'No projects match your current search keywords or status filter.'}
                       </p>
                       {safeItems.length === 0 && (

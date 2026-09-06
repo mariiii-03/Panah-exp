@@ -18,12 +18,7 @@ export interface DashboardStats {
   active_projects: number;
   total_sites: number;
   total_materials: number;
-  total_candidates: number;
-  total_generated_designs: number;
-  total_design_versions: number;
-  total_validation_runs: number;
-  total_reviews: number;
-  total_audit_events: number;
+
   recent_activity: Array<{
     id: number;
     action: string;
@@ -42,9 +37,7 @@ export interface ProjectHistoryItem {
   updated_at: string;
   site_count: number;
   material_count: number;
-  candidate_count: number;
-  generated_count: number;
-  design_version_count: number;
+
 }
 
 export interface WindLoadRequest {

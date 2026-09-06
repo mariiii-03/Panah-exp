@@ -348,7 +348,7 @@ export const HomePage: React.FC = () => {
             Total Projects
           </div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
-            {stats ? stats.total_projects : '3'}
+            {stats ? stats.total_projects : '0'}
           </div>
         </div>
 
@@ -357,7 +357,7 @@ export const HomePage: React.FC = () => {
             Field Sites
           </div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--lime)' }}>
-            {stats ? stats.total_sites : '6'}
+            {stats ? stats.total_sites : '0'}
           </div>
         </div>
 
@@ -366,7 +366,7 @@ export const HomePage: React.FC = () => {
             Material Profiles
           </div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
-            {stats ? stats.total_materials : '12'}
+            {stats ? stats.total_materials : '0'}
           </div>
         </div>
 
@@ -467,7 +467,7 @@ export const HomePage: React.FC = () => {
               No Active Shelter Projects
             </h4>
             <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', maxWidth: '420px', margin: '0 auto 24px', lineHeight: 1.5 }}>
-              All placeholder projects have been removed. Click below to initialize a new humanitarian shelter assessment project.
+              Get started by initializing a new humanitarian shelter assessment project.
             </p>
             <button
               className="btn btn-primary"
@@ -535,7 +535,7 @@ export const HomePage: React.FC = () => {
                           <Wind size={10} style={{ display: 'inline', marginRight: '3px' }} /> Wind
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--navy)' }}>
-                          1.25 kPa
+                          N/A
                         </div>
                       </div>
 
@@ -544,7 +544,7 @@ export const HomePage: React.FC = () => {
                           <Activity size={10} style={{ display: 'inline', marginRight: '3px' }} /> Seismic
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--navy)' }}>
-                          Zone 3
+                          N/A
                         </div>
                       </div>
 
@@ -553,7 +553,7 @@ export const HomePage: React.FC = () => {
                           <DollarSign size={10} style={{ display: 'inline', marginRight: '3px' }} /> Cost
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 600, color: 'var(--green-ok)' }}>
-                          $420/u
+                          N/A
                         </div>
                       </div>
                     </div>

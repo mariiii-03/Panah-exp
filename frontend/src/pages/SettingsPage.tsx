@@ -94,7 +94,6 @@ export const SettingsPage: React.FC = () => {
                 type="text"
                 className="input"
                 style={{ width: '100%' }}
-                defaultValue="Lead Field Engineer"
               />
             </div>
 
@@ -106,7 +105,6 @@ export const SettingsPage: React.FC = () => {
                 type="text"
                 className="input"
                 style={{ width: '100%' }}
-                defaultValue="Lead Structural Assessment Specialist"
               />
             </div>
 
@@ -163,7 +161,6 @@ export const SettingsPage: React.FC = () => {
                 type="text"
                 className="input"
                 style={{ width: '100%' }}
-                defaultValue="Class D (Stiff Soil / Alluvial Riverbed)"
               />
             </div>
           </div>
